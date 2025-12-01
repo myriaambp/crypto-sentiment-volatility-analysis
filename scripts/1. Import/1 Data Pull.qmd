@@ -1,6 +1,15 @@
-###############################
-###  LIBRARIES
-###############################
+---
+title: "Data Pull, Initial Clean & Merge"
+format: html
+execute:
+  echo: true
+  warning: true
+  message: true
+---
+
+## Load Libraries
+
+```{r}
 library(httr)
 library(jsonlite)
 library(dplyr)
@@ -12,33 +21,35 @@ library(scales)
 library(readr)
 library(zoo)
 
+```
 
 
-###############################
-###  API KEYS FROM .Renviron
-###############################
+# API KEYS FROM .Renviron
+
+```{r}
 demo_key <- Sys.getenv("COINGECKO_KEY")
 s_api_key <- Sys.getenv("SANTIMENT_KEY")
 
 if (demo_key == "") stop("Missing COINGECKO_KEY in .Renviron")
 if (s_api_key == "") stop("Missing SANTIMENT_KEY in .Renviron")
 
+```
 
+#  DIRECTORY SETUP
 
-###############################
-###  DIRECTORY SETUP
-###############################
+```{r}
 raw_dir   <- "data/raw"
 clean_dir <- "data/clean"
 
 dir.create(raw_dir,  showWarnings = FALSE, recursive = TRUE)
 dir.create(clean_dir, showWarnings = FALSE, recursive = TRUE)
+```
 
 
 
-###############################
-###  FETCH CRYPTO PRICES
-###############################
+#  FETCH CRYPTO PRICES
+
+```{r}
 fetch_crypto_data <- function(coin_id, vs_currency = "usd", days = "365", api_key = demo_key) {
 
   url <- paste0("https://api.coingecko.com/api/v3/coins/", coin_id, "/market_chart")
@@ -101,22 +112,24 @@ crypto_all <- bind_rows(btc, eth)
 
 write_csv(crypto_all, file.path(clean_dir, "crypto_prices_1year.csv"))
 
+```
 
 
-###############################
-###  AUTO-DETECT START/END DATES
-###############################
+# AUTO-DETECT START/END DATES
+
+```{r}
 start_date <- as.Date(min(crypto_all$date, na.rm = TRUE))
 end_date_raw <- as.Date(max(crypto_all$date, na.rm = TRUE))
 end_date <- min(end_date_raw, Sys.Date())  # clamp to today
 
 message("Auto-detected date range (clamped to today): ", start_date, " to ", end_date)
 
+```
 
 
-###############################
-###  SENTIMENT DATA (Santiment API)
-###############################
+#  SENTIMENT DATA (Santiment API)
+
+```{r}
 get_santiment_sentiment <- function(slug, from_date, to_date, api_key = s_api_key) {
 
   from_date <- as.Date(from_date)
@@ -201,11 +214,12 @@ eth_sent <- get_santiment_sentiment("ethereum", start_date, end_date)
 # bind only non-NULL sentiment data
 sentiment_all <- bind_rows(Filter(Negate(is.null), list(btc_sent, eth_sent)))
 
+```
 
 
-###############################
-###  GOOGLE TRENDS (AUTO DATE RANGE)
-###############################
+# GOOGLE TRENDS (AUTO DATE RANGE)
+
+```{r}
 fetch_daily_trends <- function(keyword, start_date, end_date, geo = "US") {
 
   save_raw   <- raw_dir
@@ -287,11 +301,12 @@ eth_trends <- fetch_daily_trends("ethereum", start_date, end_date)
 
 trends_all <- bind_rows(Filter(Negate(is.null), list(btc_trends, eth_trends)))
 
+```
 
 
-###############################
-###  MERGE ALL DATA SOURCES
-###############################
+# MERGE ALL DATA SOURCES
+
+```{r}
 merged <- crypto_all |>
   mutate(date = as.Date(date)) |>
   left_join(sentiment_all, by = c("date", "coin")) |>
@@ -307,3 +322,7 @@ merged <- crypto_all |>
 write_csv(merged, file.path(clean_dir, "merged_crypto_sentiment_trends.csv"))
 
 message("Merged dataset saved to data/clean/merged_crypto_sentiment_trends.csv")
+
+
+```
+
