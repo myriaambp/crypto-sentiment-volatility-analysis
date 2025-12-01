@@ -6,7 +6,7 @@ execute:
   echo: true
 
 book:
-  title: "Behavioral Signals in Crypto: Analyzing Sentiment and Search Trends as Predictors of Market Volatility"
+  title: "Behavioral Signals in Crypto: Analyzing Sentiment and Search Trends as Predictors of Market Volatility""
   author:
     - Myriam Bengoechea Pardo (mb5500)
   repo-url: https://github.com/myriaambp/crypto-sentiment-volatility-analysis
