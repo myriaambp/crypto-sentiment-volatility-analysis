@@ -1,17 +1,27 @@
 # Data
 
 ## Description
+This project integrates three open data sources to examine how market activity, online sentiment, and public attention evolve for Bitcoin and Ethereum between December 2, 2024 and December 1, 2025. This one year window corresponds to the maximum period available under the free tiers of the APIs used in this project: both CoinGecko and Santiment restrict historical access to approximately the past 365 days unless a paid plan is used.
 
-This project brings together three open data sources to study how market activity, sentiment, and public attention interact for Bitcoin and Ethereum between October 2024 and October 2025, (I chose this one-year period because most APIs, including CoinGecko and Santiment, limit free access to historical data to approximately the past 365 days, while older data require paid access). Daily market data come from the CoinGecko API, which compiles information from major cryptocurrency exchanges and reports historical prices, trading volumes, and market capitalization. Sentiment data are collected from the Santiment API, which analyzes social media discussions and other online mentions to estimate the overall tone toward each asset. Public attention is measured using Google Trends, accessed through the gtrendsR package in R, which tracks normalized daily search interest for the keywords “bitcoin” and “ethereum.”
+Daily market data come from the CoinGecko Market Data API, which compiles cryptocurrency prices, trading volumes, and market capitalization across major global exchanges. Online sentiment is obtained from the Santiment API, which analyzes social media discussions and other text based signals to estimate the overall tone toward each asset. Public attention is measured using Google Trends, accessed through the gtrendsR package in R, which provides normalized daily search interest for the keywords “bitcoin” and “ethereum.”
 
-All three datasets were downloaded as CSV files, merged by coin and date, and aligned to a daily frequency. I cleaned and standardized timestamps, normalized sentiment values, and handled a few missing days that resulted from API rate limits or gaps in coverage. The main issue that emerged during pre-processing was that some days were missing sentiment scores from Santiment, likely due to gaps in social media coverage or API rate limits, (might need to impute or drop those days later on). The final merged dataset includes roughly 365 daily observations per coin and provides a clean, reproducible foundation for exploring how shifts in mood and attention correspond with cryptocurrency volatility.
+API requests require authentication, so all keys were stored privately in my .Renviron file. The data pull script automatically downloads the raw JSON responses, converts them into CSV files, and stores them in `data/raw/`. These raw files are then cleaned, standardized, and merged by coin and date. This includes aligning timestamps to a daily frequency, normalizing sentiment values, and handling a small number of missing days, primarily dates where Santiment did not report sentiment data, which is common due to API rate limits or gaps in social media coverage.
 
-Data Sources:
+The final merged dataset contains one full year of daily observations for each coin and provides a reproducible foundation for exploring how market conditions, sentiment, and search behavior relate to cryptocurrency volatility.
 
-CoinGecko Market Data API: https://www.coingecko.com/en/api
+### Data Sources
 
-Santiment API: https://api.santiment.net
+**CoinGecko Market Data API:**  
+  <https://www.coingecko.com/en/api>
 
-Google Trends: gtrendsR package
+**Santiment API:**  
+  <https://api.santiment.net>
+
+**Google Trends via `gtrendsR`:**  
+  (Daily search interest for “bitcoin” and “ethereum”)
+
+
+All data collection and preprocessing steps are contained in  [`1 Data Pull.qmd`](scripts/1.%20Import/1%20Data%20Pull.qmd), which downloads data from all three APIs, saves raw files to `data/raw/`,  and writes the cleaned, merged dataset to `data/clean/merged_crypto_sentiment_trends.csv`.
+
 
 ## Missing value analysis
