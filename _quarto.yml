@@ -6,11 +6,10 @@ execute:
   echo: true
 
 book:
-  title: "YOUR PROJECT TITLE"
+  title: "Behavioral Signals in Crypto: Analyzing Sentiment and Search Trends as Predictors of Market Volatility"
   author:
-    - AUTHOR1 (UNI1)
-    - AUTHOR2 (UNI2)
-  repo-url: https://github.com/YOUR_GITHUB_ACCOUNT/REPO_NAME
+    - Myriam Bengoechea Pardo (mb5500)
+  repo-url: https://github.com/myriaambp/crypto-sentiment-volatility-analysis
   date: today
   page-footer:
     right: |
