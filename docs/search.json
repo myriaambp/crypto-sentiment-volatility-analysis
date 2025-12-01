@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "Behavioral Signals in Crypto: Analyzing Sentiment and Search Trends as Predictors of Market Volatility",
     "section": "",
-    "text": "1 Introduction",
+    "text": "1 Introduction\nThis project examines how behavioral factors such as sentiment and attention shape cryptocurrency market dynamics between October 2024 and October 2025, focusing on Bitcoin and Ethereum. Motivated by my background in neuroscience and my interest in transitioning to finance, I am particularly drawn to understanding how patterns of human behavior manifest in financial data. Cryptocurrencies provide an ideal setting for this research because their prices are highly sensitive to collective mood and information flow, often reacting to changes in public sentiment and online search activity quite rapidly. The analysis centers on three questions: How daily sentiment fluctuations, whether optimistic or pessimistic, correlate with market volatility and returns, whether spikes in public attention, measured through Google search interest, precede or follow periods of heightened instability, and whether Bitcoin and Ethereum differ in how strongly they respond to these behavioral signals. Through these questions, the project aims to understand how behavioral and psychological dynamics influence financial market movements.",
     "crumbs": [
       "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
     ]
@@ -14,7 +14,7 @@
     "href": "data.html",
     "title": "2  Data",
     "section": "",
-    "text": "2.1 Description",
+    "text": "2.1 Description\nThis project brings together three open data sources to study how market activity, sentiment, and public attention interact for Bitcoin and Ethereum between October 2024 and October 2025, (I chose this one-year period because most APIs, including CoinGecko and Santiment, limit free access to historical data to approximately the past 365 days, while older data require paid access). Daily market data come from the CoinGecko API, which compiles information from major cryptocurrency exchanges and reports historical prices, trading volumes, and market capitalization. Sentiment data are collected from the Santiment API, which analyzes social media discussions and other online mentions to estimate the overall tone toward each asset. Public attention is measured using Google Trends, accessed through the gtrendsR package in R, which tracks normalized daily search interest for the keywords “bitcoin” and “ethereum.”\nAll three datasets were downloaded as CSV files, merged by coin and date, and aligned to a daily frequency. I cleaned and standardized timestamps, normalized sentiment values, and handled a few missing days that resulted from API rate limits or gaps in coverage. The main issue that emerged during pre-processing was that some days were missing sentiment scores from Santiment, likely due to gaps in social media coverage or API rate limits, (might need to impute or drop those days later on). The final merged dataset includes roughly 365 daily observations per coin and provides a clean, reproducible foundation for exploring how shifts in mood and attention correspond with cryptocurrency volatility.\nData Sources:\nCoinGecko Market Data API: https://www.coingecko.com/en/api\nSantiment API: https://api.santiment.net\nGoogle Trends: gtrendsR package",
     "crumbs": [
       "<span class='chapter-number'>2</span>  <span class='chapter-title'>Data</span>"
     ]
