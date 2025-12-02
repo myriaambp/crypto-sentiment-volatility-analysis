@@ -1,0 +1,318 @@
+---
+title: "2 Missing Data Analysis"
+editor: visual
+---
+### Load the Final Dataset
+
+```{r}
+library(tidyverse)
+library(naniar)
+library(janitor)
+library(here)
+library(scales)
+here()
+
+df <- read_csv(here("data", "clean", "merged_crypto_sentiment_trends.csv")) |>
+  janitor::clean_names()
+
+
+```
+
+```{r}
+
+df |>
+  summarise(across(everything(), ~ sum(is.na(.)))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "missing_count") |>
+  arrange(desc(missing_count))
+
+```
+
+### Missingness by Coin
+
+```{r}
+
+# Clean variable names
+nice_names <- c(
+  daily_return    = "Daily Return",
+  date            = "Date",
+  market_cap      = "Market Cap",
+  price           = "Price",
+  search_interest = "Search Interest",
+  sentiment_score = "Sentiment Score",
+  volatility_7d   = "7-Day Volatility",
+  volume          = "Volume",
+  coin            = "Coin"
+)
+
+# Compute percent missing
+miss_coin <- df |>
+  mutate(across(everything(), ~ is.na(.), .names = "miss_{col}")) |>
+  group_by(coin) |>
+  summarise(across(starts_with("miss_"), mean)) |>
+  pivot_longer(
+    cols = starts_with("miss_"),
+    names_to = "variable",
+    values_to = "missing_prop"
+  ) |>
+  mutate(
+    missing_pct = missing_prop * 100,
+    variable = str_remove(variable, "miss_"),
+    variable = nice_names[variable]
+  )
+
+# Final plot with ascending order on x-axis
+ggplot(miss_coin, aes(x = fct_reorder(variable, missing_pct), y = missing_pct)) +
+  geom_col(fill = "#3182bd") +
+  facet_grid(
+    rows = vars(coin),
+    scales = "free_x",
+    switch = "x"
+  ) +
+  labs(
+    x = NULL,
+    y = "Percent Missing",
+    title = "Missingness by Coin"
+  ) +
+  scale_y_continuous(labels = label_percent(scale = 1)) +
+  theme_grey(base_size = 16) +
+  theme(
+    strip.placement = "outside",
+    strip.text = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+    axis.text.y = element_text(size = 12),
+    legend.position = "none"
+  )
+```
+
+### Interpretation
+
+Missing values are concentrated in a small number of variables, and the pattern is nearly identical for Bitcoin and Ethereum. The largest gaps occur in *Sentiment Score* (around 8 percent for both coins), which likely reflects days when the sentiment API returned no usable observations. *7-Day Volatility* and *Search Interest* show smaller amounts of missingness, consistent with rolling-window requirements and limitations in Google Trends reporting. *Daily Return* is missing only on the first trading day, where no previous price exists.
+
+All core market variables (Price, Volume, Market Cap) are fully observed, indicating that the underlying market data source is complete and reliable. Overall, missingness arises primarily from how external or derived variables are generated, rather than from inconsistencies in the market data itself.
+
+Possible approaches include simple time-series interpolation for sentiment and search interest, carrying forward values when appropriate, or restricting analyses to periods with complete data for rolling metrics.
+
+
+### Missingness Over Time by Variable
+
+```{r}
+library(tidyverse)
+
+vars_with_missing <- c(
+  "sentiment_score",
+  "search_interest",
+  "volatility_7d",
+  "daily_return"
+)
+
+df_long <- df |>
+  select(date, coin, all_of(vars_with_missing)) |>
+  pivot_longer(
+    cols = all_of(vars_with_missing),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  mutate(
+    missing = is.na(value),
+    variable = recode(variable,
+      sentiment_score = "Sentiment Score",
+      search_interest = "Search Interest",
+      volatility_7d = "7-Day Volatility",
+      daily_return = "Daily Return"
+    )
+  ) |>
+  filter(missing)  # keep only missing points
+
+ggplot(df_long, aes(x = date, y = variable)) +
+  geom_point(color = "#e6550d", size = 3) +
+  facet_wrap(~ coin, ncol = 1) +
+  labs(
+    x = "Date",
+    y = "Variable",
+    title = "Missingness Over Time by Variable"
+  ) +
+  theme_grey(base_size = 16)
+```
+
+The visualization shows that missing values occur only on a small number of dates, and the pattern is identical for Bitcoin and Ethereum.
+
+Specifically:
+- Sentiment Score and Search Interest have missing values clustered on the same late-2025 dates for both coins. This strongly suggests the issue arises from the external sources that generated these variables (for example API failure or gaps in Google Trends availability), rather than coin-specific factors.
+- Daily Return and 7-Day Volatility have missing values only at the start of each series, which is expected given their formulas (no prior day return, incomplete rolling window).
+- There is no period during the year where market variables are missing, confirming that the core price and volume data are complete.
+Overall, missingness is sparse, structured, and driven by how variables are generated, not by random failure in the underlying data.
+
+### Price Behavior on Missing vs. Non-Missing Sentiment Days
+
+```{r}
+df |>
+  mutate(
+    sent_missing = is.na(sentiment_score),
+    sent_missing = case_when(
+      sent_missing ~ "Missing",
+      !sent_missing ~ "Present"
+    )
+  ) |>
+  ggplot(aes(x = sent_missing, y = price)) +
+  geom_boxplot(fill = "#3182bd", alpha = 0.45, color = "black", linewidth = 0.7) +
+  facet_wrap(~ coin, ncol = 2, scales = "free_y") +
+  labs(
+    x = "Sentiment Score Status",
+    y = "Price",
+    title = "Price Levels on Days With and Without Missing Sentiment"
+  ) +
+  theme_grey(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    strip.text = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+```
+
+The boxplots compare price levels on days where the sentiment score is missing versus days where it is available, separately for Bitcoin and Ethereum. For both assets, the distributions are similar: the medians are close, the interquartile ranges largely overlap, and the full ranges show no clear shift toward unusually high or low values when sentiment is missing. This indicates that sentiment missingness is not associated with abnormal price behavior. Instead, the missing values likely reflect gaps in the external sentiment data source rather than market-driven anomalies. Based on this pattern, light time-based imputation is reasonable because the missingness does not appear to depend on the underlying price dynamics.
+
+### Price Behavior on Missing vs. Non-Missing Search Interest Days
+
+```{r}
+df |>
+  mutate(
+    search_missing = is.na(search_interest),
+    search_missing = case_when(
+      search_missing ~ "Missing",
+      !search_missing ~ "Present"
+    )
+  ) |>
+  ggplot(aes(x = search_missing, y = price)) +
+  geom_boxplot(fill = "#3182bd", alpha = 0.45, color = "black", linewidth = 0.7) +
+  facet_wrap(~ coin, ncol = 2, scales = "free_y") +
+  labs(
+    x = "Search Interest Status",
+    y = "Price",
+    title = "Price Levels on Days With and Without Missing Search Interest"
+  ) +
+  theme_grey(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    strip.text = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+```
+
+The boxplots compare price levels on days where Google Trends search interest is missing versus days where it is available. For both Bitcoin and Ethereum, the distributions show substantial overlap: the medians are similar, the interquartile ranges closely align, and there is no indication that prices are unusually high or low on the days where search interest is missing. This suggests that the missing Google Trends values are not driven by market conditions. Instead, the missingness likely reflects gaps or suppression in the Google Trends data itself (for example, low search volume or API limitations). Since missingness is unrelated to price movements, light time-based imputation for search interest is appropriate and unlikely to introduce bias.
+
+
+### Imputation of External Missing Values
+
+```{r}
+library(tidyverse)
+library(zoo)
+
+df_imputed <- df |>
+  arrange(coin, date) |>
+  group_by(coin) |>
+  mutate(
+    # Only interpolate missing values coming from external APIs
+    sentiment_score_imp = na.approx(sentiment_score, na.rm = FALSE),
+    search_interest_imp = na.approx(search_interest, na.rm = FALSE),
+
+    # Keep structural NAs from computed variables as is
+    daily_return_imp  = daily_return,     # missing on first day only
+    volatility_7d_imp = volatility_7d     # missing on first 6 days + tied to daily_return
+  ) |>
+  ungroup()
+```
+
+### Check 
+
+```{r}
+df_imputed |>
+  summarize(
+    sentiment_original_NA = sum(is.na(sentiment_score)),
+    sentiment_filled_NA   = sum(is.na(sentiment_score_imp)),
+    search_original_NA    = sum(is.na(search_interest)),
+    search_filled_NA      = sum(is.na(search_interest_imp))
+  )
+
+
+```
+
+Only two variables in the dataset contain true missingness originating from the external data pulls: `sentiment_score` from the Santiment API and `search_interest` from Google Trends. These gaps occur on the same dates for both Bitcoin and Ethereum and reflect days when the upstream APIs did not return values rather than issues in the asset data itself. Because these variables play a central role in the analysis and their missingness is unrelated to price behavior, I interpolate these values over time using linear interpolation within each coin.
+
+In contrast, the missing values in `daily_return` and the early values of `volatility_7d` are structural and arise directly from how these metrics are computed. Daily return cannot be calculated on the first day of each series because there is no prior price, and 7-day volatility requires a full rolling window. These values are therefore mathematically undefined rather than missing in the usual sense and should not be imputed. Keeping these structural NAs preserves the integrity of the derived features while avoiding the introduction of artificial information.
+
+
+### Data Cleaning
+
+#### Check for impossible or negative values
+
+```{r}
+
+df |> summarise(
+  neg_price       = sum(price < 0, na.rm = TRUE),
+  neg_volume      = sum(volume < 0, na.rm = TRUE),
+  neg_market_cap  = sum(market_cap < 0, na.rm = TRUE)
+)
+
+#Crypto prices, volume, and market cap should never be negative.
+
+```
+### Outlier Check by Variable 
+
+### Outlier Detection Using Standardized Z-Scores
+
+```{r}
+#| fig-width: 18
+#| fig-height: 12
+#| fig-align: "center"
+
+df_z <- df |>
+  mutate(across(
+    c(price, volume, market_cap,
+      sentiment_score, search_interest,
+      daily_return, volatility_7d),
+    ~ scale(.)[,1],
+    .names = "{.col}_z"
+  ))
+
+df_z |>
+  select(coin, ends_with("_z")) |>
+  pivot_longer(
+    cols = ends_with("_z"),
+    names_to = "variable",
+    values_to = "z"
+  ) |>
+  mutate(variable = gsub("_z", "", variable),
+         variable = recode(variable,
+           price = "Price",
+           volume = "Volume",
+           market_cap = "Market Cap",
+           sentiment_score = "Sentiment Score",
+           search_interest = "Search Interest",
+           daily_return = "Daily Return",
+           volatility_7d = "7 Day Volatility"
+         )) |>
+  ggplot(aes(x = coin, y = z, fill = coin)) +
+  geom_boxplot(outlier.color = "#e6550d", alpha = 0.6) +
+  geom_hline(yintercept = 3,  linetype = "dashed", color = "red") +
+  geom_hline(yintercept = -3, linetype = "dashed", color = "red") +
+  facet_wrap(~ variable, scales = "free_y", ncol = 3) +
+  labs(
+    title = "Outlier Detection Using Standardized Z-Scores",
+    x = "Coin",
+    y = "Z-Score"
+  ) +
+  theme_grey(base_size = 15) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(size = 13, face = "bold"),
+    plot.title = element_text(size = 14, face = "bold")
+  )
+```
+
+Outlier detection is important in this project because the dataset combines multiple sources (market price, sentiment, and search interest) which operate on very different numeric scales. Price and market capitalization are several orders of magnitude larger than sentiment or search interest, and raw boxplots do not allow meaningful comparison. To place all variables on a common footing, each numeric variable is standardized using Z-scores, which measure values in terms of standard deviations from the variable mean. This transformation does not change the relative shape of each distribution but expresses all variables on the same scale. Observations with |Z| > 3 are conventionally considered potential outliers.
+
+Standardizing the variables highlights potential outliers based on the threshold |Z| > 3. This approach allows direct comparison across variables that differ substantially in scale. The results show that a small number of extreme observations appear in volume, daily returns, and seven-day volatility for both Bitcoin and Ethereum. These correspond to periods of unusually high trading activity or rapid price changes, which are common in cryptocurrency markets. Search interest and sentiment also show occasional peaks, reflecting spikes in public attention. None of these outliers appear inconsistent with expected behavior for these assets, and no observations suggest data processing errors. Given that the dataset covers a single year and extreme movements are part of typical market dynamics, all observations are retained.
+
+
