@@ -220,6 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Daily market data come from the CoinGecko Market Data API, which compiles cryptocurrency prices, trading volumes, and market capitalization across major global exchanges. Online sentiment is obtained from the Santiment API, which analyzes social media discussions and other text based signals to estimate the overall tone toward each asset. Public attention is measured using Google Trends, accessed through the gtrendsR package in R, which provides normalized daily search interest for the keywords “bitcoin” and “ethereum.”</p>
 <p>API requests require authentication, so all keys were stored privately in my .Renviron file. The data pull script automatically downloads the raw JSON responses, converts them into CSV files, and stores them in <code>data/raw/</code>. These raw files are then cleaned, standardized, and merged by coin and date. This includes aligning timestamps to a daily frequency, normalizing sentiment values, and handling a small number of missing days, primarily dates where Santiment did not report sentiment data, which is common due to API rate limits or gaps in social media coverage.</p>
 <p>The final merged dataset contains one full year of daily observations for each coin and provides a reproducible foundation for exploring how market conditions, sentiment, and search behavior relate to cryptocurrency volatility.</p>
+<p>All data collection and preprocessing steps are contained in <a href="scripts/1. Import/1 Data Pull.qmd"><code>1 Data Pull.qmd</code></a>, which downloads data from all three APIs, saves raw files to <code>data/raw/</code>, and writes the cleaned, merged dataset to <code>data/clean/merged_crypto_sentiment_trends.csv</code>.</p>
 <section id="data-sources" class="level3" data-number="2.1.1">
 <h3 data-number="2.1.1" class="anchored" data-anchor-id="data-sources"><span class="header-section-number">2.1.1</span> Data Sources</h3>
 <p><strong>CoinGecko Market Data API:</strong><br>
@@ -228,7 +229,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <a href="https://api.santiment.net" class="uri">https://api.santiment.net</a></p>
 <p><strong>Google Trends via <code>gtrendsR</code>:</strong><br>
 (Daily search interest for “bitcoin” and “ethereum”)</p>
-<p>All data collection and preprocessing steps are contained in <a href="scripts/1. Import/1 Data Pull.qmd"><code>1 Data Pull.qmd</code></a>, which downloads data from all three APIs, saves raw files to <code>data/raw/</code>, and writes the cleaned, merged dataset to <code>data/clean/merged_crypto_sentiment_trends.csv</code>.</p>
 </section>
 </section>
 <section id="missing-value-analysis" class="level2" data-number="2.2">
@@ -325,7 +325,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>The plot shows that missingness is concentrated in variables that rely on external data sources rather than market feeds. Sentiment Score has the highest proportion of missing values, close to 8.5 percent for both Bitcoin and Ethereum. Search Interest and 7 Day Volatility follow with smaller gaps of about 1.6 and 1.9 percent. Daily Return has roughly 0.5 percent missingness, which corresponds to the initial day of each series when no previous price exists. The core market variables Coin, Date, Price, Volume, and Market Cap are fully observed across the entire year. Bitcoin and Ethereum display almost identical missingness patterns, which indicates that the gaps come from shared upstream sources rather than asset specific issues.</p>
+<p>The plot shows that missingness is concentrated in variables that rely on external data sources rather than market feeds. Sentiment Score has the highest proportion of missing values, close to 8.5 % for both Bitcoin and Ethereum. Search Interest and 7 Day Volatility follow with smaller gaps of about 1.6 and 1.9 %. Daily Return has roughly 0.5 % missingness, which corresponds to the initial day of each series when no previous price exists. The core market variables Coin, Date, Price, Volume, and Market Cap are fully observed across the entire year. Bitcoin and Ethereum display almost identical missingness patterns, which indicates that the gaps come from shared upstream sources rather than asset specific issues.</p>
 <hr>
 </section>
 <section id="missingness-over-time" class="level3" data-number="2.2.2">
@@ -523,6 +523,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>Standardizing the variables makes it easier to compare their distributions. A few observations fall beyond ±3 standard deviations for Volume, Daily Return, and Seven Day Volatility. These points line up with periods of sharp price swings or heavy trading, which are typical features of cryptocurrency markets. Sentiment and Search Interest show occasional spikes during times of increased public attention. None of these observations indicate problems with data quality, so all values are kept in the dataset.</p>
+<p>The final cleaned and imputed dataset used in results.qmd is saved in <code>data/clean/</code>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the final cleaned dataset for exploration</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Use imputed sentiment and search interest</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Retain derived metrics as originally computed</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>df_final <span class="ot">&lt;-</span> df_imputed <span class="sc">|&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    date,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    coin,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    price,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    volume,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    market_cap,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">sentiment_score =</span> sentiment_score_imp,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">search_interest =</span> search_interest_imp,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">daily_return    =</span> daily_return_imp,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">volatility_7d   =</span> volatility_7d_imp</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Save to clean data folder</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  df_final,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"clean"</span>, <span class="st">"crypto_final_clean.csv"</span>)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 
 
 </section>

@@ -291,4 +291,34 @@ df_z |>
 
 Standardizing the variables makes it easier to compare their distributions. A few observations fall beyond ±3 standard deviations for Volume, Daily Return, and Seven Day Volatility. These points line up with periods of sharp price swings or heavy trading, which are typical features of cryptocurrency markets. Sentiment and Search Interest show occasional spikes during times of increased public attention. None of these observations indicate problems with data quality, so all values are kept in the dataset.
 
+The final cleaned and imputed dataset used in results.qmd is saved in `data/clean/`.
 
+```{r}
+#| message: false
+#| warning: false
+#| results: hide
+
+# Create the final cleaned dataset for exploration
+# Use imputed sentiment and search interest
+# Retain derived metrics as originally computed
+
+df_final <- df_imputed |>
+  transmute(
+    date,
+    coin,
+    price,
+    volume,
+    market_cap,
+    sentiment_score = sentiment_score_imp,
+    search_interest = search_interest_imp,
+    daily_return    = daily_return_imp,
+    volatility_7d   = volatility_7d_imp
+  )
+
+# Save to clean data folder
+write_csv(
+  df_final,
+  here("data", "clean", "crypto_final_clean.csv")
+)
+
+```
