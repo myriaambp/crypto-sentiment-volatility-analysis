@@ -180,6 +180,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#description" id="toc-description" class="nav-link active" data-scroll-target="#description"><span class="header-section-number">2.1</span> Description</a>
   <ul class="collapse">
   <li><a href="#data-sources" id="toc-data-sources" class="nav-link" data-scroll-target="#data-sources"><span class="header-section-number">2.1.1</span> Data Sources</a></li>
+  <li><a href="#data-dictionary" id="toc-data-dictionary" class="nav-link" data-scroll-target="#data-dictionary"><span class="header-section-number">2.1.2</span> Data Dictionary</a></li>
   </ul></li>
   <li><a href="#missing-value-analysis" id="toc-missing-value-analysis" class="nav-link" data-scroll-target="#missing-value-analysis"><span class="header-section-number">2.2</span> Missing value analysis</a>
   <ul class="collapse">
@@ -229,6 +230,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <a href="https://api.santiment.net" class="uri">https://api.santiment.net</a></p>
 <p><strong>Google Trends via <code>gtrendsR</code>:</strong><br>
 (Daily search interest for “bitcoin” and “ethereum”)</p>
+</section>
+<section id="data-dictionary" class="level3" data-number="2.1.2">
+<h3 data-number="2.1.2" class="anchored" data-anchor-id="data-dictionary"><span class="header-section-number">2.1.2</span> Data Dictionary</h3>
+<p>Below are the variables included in the final cleaned dataset, along with their scales and how to interpret them.</p>
+<ul>
+<li><p><strong>date</strong><br>
+Daily timestamp for each observation, used to align all behavioral and market indicators.</p></li>
+<li><p><strong>coin</strong><br>
+Asset identifier (<code>"BITCOIN"</code> or <code>"ETHEREUM"</code>), allowing comparison across the two markets.</p></li>
+<li><p><strong>price</strong><br>
+Daily closing price in USD. Interpreted directly in dollars to track overall price levels and trends.</p></li>
+<li><p><strong>volume</strong><br>
+Total trading volume for the day, measured in units traded. Higher values indicate more active trading.</p></li>
+<li><p><strong>market_cap</strong><br>
+Total market value in USD, reflecting the size and economic weight of each asset.</p></li>
+<li><p><strong>sentiment_score</strong><br>
+Daily sentiment index ranging roughly from −0.1 to 0.1. Higher values indicate more optimistic discussion.<br>
+<em>Source:</em> Derived from text sentiment API scores averaged by day.</p></li>
+<li><p><strong>search_interest</strong><br>
+Google Trends search index between 0 and 100. Higher values represent greater public attention.<br>
+<em>Source:</em> Directly from Google Trends API.</p></li>
+<li><p><strong>daily_return</strong><br>
+Day over day percentage price change, typically between -0.1 and 0.1. Measures short term market movement.<br>
+<em>Calculation:</em> <code>daily_return_t = (price_t - price_{t-1}) / price_{t-1}</code></p></li>
+<li><p><strong>volatility_7d</strong><br>
+Seven day rolling standard deviation of daily returns, used to capture short term variability.<br>
+<em>Calculation:</em> <code>volatility_7d_t = sd(daily_return_{t-6}, ..., daily_return_t)</code></p></li>
+</ul>
 </section>
 </section>
 <section id="missing-value-analysis" class="level2" data-number="2.2">

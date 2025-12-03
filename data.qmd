@@ -21,6 +21,41 @@ All data collection and preprocessing steps are contained in  [`1 Data Pull.qmd`
 
 **Google Trends via `gtrendsR`:**  
   (Daily search interest for “bitcoin” and “ethereum”)
+  
+### Data Dictionary
+
+Below are the variables included in the final cleaned dataset, along with their scales and how to interpret them.
+
+- **date**  
+  Daily timestamp for each observation, used to align all behavioral and market indicators.
+
+- **coin**  
+  Asset identifier (`"BITCOIN"` or `"ETHEREUM"`), allowing comparison across the two markets.
+
+- **price**  
+  Daily closing price in USD. Interpreted directly in dollars to track overall price levels and trends.
+
+- **volume**  
+  Total trading volume for the day, measured in units traded. Higher values indicate more active trading.
+
+- **market_cap**  
+  Total market value in USD, reflecting the size and economic weight of each asset.
+
+- **sentiment_score**  
+  Daily sentiment index ranging roughly from −0.1 to 0.1. Higher values indicate more optimistic discussion.  
+  *Source:* Derived from text sentiment API scores averaged by day.
+
+- **search_interest**  
+  Google Trends search index between 0 and 100. Higher values represent greater public attention.  
+  *Source:* Directly from Google Trends API.
+
+- **daily_return**  
+  Day over day percentage price change, typically between -0.1 and 0.1. Measures short term market movement.  
+  *Calculation:* `daily_return_t = (price_t - price_{t-1}) / price_{t-1}`
+
+- **volatility_7d**  
+  Seven day rolling standard deviation of daily returns, used to capture short term variability.  
+  *Calculation:* `volatility_7d_t = sd(daily_return_{t-6}, ..., daily_return_t)`
 
 
 ## Missing value analysis
