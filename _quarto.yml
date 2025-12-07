@@ -25,5 +25,6 @@ format:
   html:
     theme: morph
     code-fold: true
+    css: styles.css
 
 

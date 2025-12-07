@@ -20,13 +20,13 @@ df <- read_csv(here("data", "clean", "crypto_final_clean.csv"), show_col_types =
 
 This chapter explores how price movements, sentiment, and search attention evolve over time for Bitcoin and Ethereum. The analysis is descriptive and focuses on answering three questions:
 
-1. How do prices, sentiment, and public attention change over time?
-2. How closely do sentiment and search interest track market volatility?
-3. Do Bitcoin and Ethereum respond differently to behavioral signals?
+1.  How do prices, sentiment, and public attention change over time?
+2.  How closely do sentiment and search interest track market volatility?
+3.  Do Bitcoin and Ethereum respond differently to behavioral signals?
 
 The chapter begins by establishing baseline market behavior through price and volatility trends. It then examines sentiment as a behavioral indicator, exploring how online attitudes evolve alongside market movements and whether sentiment provides any leading signal for returns. The same structure is applied to search interest. Finally, the chapter compares how these behavioral signals relate to each asset's return distribution.
 
----
+------------------------------------------------------------------------
 
 ## How Did Bitcoin and Ethereum Prices Move This Year?
 
@@ -99,7 +99,7 @@ ggplot(df_vol, aes(x = date, y = roll_vol, color = coin)) +
 
 Both assets move through clear periods of calm and turbulence. Volatility rises in spring and again in fall, matching moments when markets reacted to shifting economic news. Ethereum has consistently higher volatility throughout the year. Bitcoin is steadier, with smaller and less frequent spikes. The midsummer volatility increase for both coins appears shortly after their price rebounds, showing that rallies can bring uncertainty alongside optimism.
 
----
+------------------------------------------------------------------------
 
 ## Does Online Sentiment Track Market Movements?
 
@@ -248,7 +248,7 @@ ggplot(sent_summary, aes(x = sent_bin, y = mean_return, fill = coin)) +
 
 For Bitcoin, returns hover near zero regardless of previous-day sentiment. Ethereum shows a clearer gradient: low sentiment precedes small losses on average, while high sentiment is followed by noticeably positive returns. This reinforces the finding that Ethereum responds more to shifts in sentiment than Bitcoin does.
 
----
+------------------------------------------------------------------------
 
 ## Does Search Interest Tell a Similar Story?
 
@@ -349,7 +349,7 @@ ggplot(search_summary, aes(x = search_bin, y = mean_return, fill = coin)) +
 
 Bitcoin returns remain near zero across all search levels. Ethereum shows a small rise after medium search interest that disappears at high levels. Spikes in attention do not consistently translate into stronger price reactions. Search interest provides only weak and inconsistent signals compared with sentiment.
 
----
+------------------------------------------------------------------------
 
 ## Why Does Ethereum React More Strongly Than Bitcoin?
 
@@ -380,7 +380,7 @@ ggplot(df, aes(x = daily_return, fill = coin)) +
 
 Ethereum's distribution is wider than Bitcoin's with heavier tails on both sides. This confirms what the earlier analysis suggested: Ethereum experiences larger daily swings in both directions. Its sharper sentiment swings, higher volatility, and stronger response to lagged behavioral signals all trace back to this fundamental difference. Bitcoin's tighter distribution reflects a more stable market that is less sensitive to shifts in online mood and attention.
 
----
+------------------------------------------------------------------------
 
 ## Summary
 

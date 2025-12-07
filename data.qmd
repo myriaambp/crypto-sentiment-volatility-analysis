@@ -78,6 +78,8 @@ suppressPackageStartupMessages({
   library(scales)
   library(zoo)
   library(patchwork)
+  library(knitr)
+  library(kableExtra)
 })
 
 df <- read_csv(here("data", "clean", "merged_crypto_sentiment_trends.csv"), show_col_types = FALSE) |>
@@ -125,29 +127,55 @@ miss_coin <- df |>
     variable = nice_names[variable]
   )
 
-ggplot(miss_coin, aes(x = fct_reorder(variable, missing_pct), y = missing_pct)) +
-  geom_col(fill = "#3182bd") +
-  facet_grid(
-    rows = vars(coin),
-    scales = "free_x",
-    switch = "x"
-  ) +
-  labs(
-    x = NULL,
-    y = "Percent Missing",
-    title = "Missingness by Coin"
-  ) +
-  scale_y_continuous(labels = label_percent(scale = 1)) +
-  theme_grey(base_size = 16) +
-  theme(
-    strip.placement = "outside",
-    strip.text = element_text(size = 14, face = "bold"),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
-    axis.text.y = element_text(size = 12)
-  )
+# ggplot(miss_coin, aes(x = fct_reorder(variable, missing_pct), y = missing_pct)) +
+#   geom_col(fill = "#3182bd") +
+#   facet_grid(
+#     rows = vars(coin),
+#     scales = "free_x",
+#     switch = "x"
+#   ) +
+#   labs(
+#     x = NULL,
+#     y = "Percent Missing",
+#     title = "Missingness by Coin"
+#   ) +
+#   scale_y_continuous(labels = label_percent(scale = 1)) +
+#   theme_grey(base_size = 16) +
+#   theme(
+#     strip.placement = "outside",
+#     strip.text = element_text(size = 14, face = "bold"),
+#     axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+#     axis.text.y = element_text(size = 12)
+#   )
+
+
+df |>
+  group_by(coin) |>
+  summarise(
+    `Sentiment Score` = mean(is.na(sentiment_score)) * 100,
+    `Search Interest` = mean(is.na(search_interest)) * 100,
+    `Daily Return` = mean(is.na(daily_return)) * 100,
+    `7-Day Volatility` = mean(is.na(volatility_7d)) * 100,
+    Price = mean(is.na(price)) * 100,
+    Volume = mean(is.na(volume)) * 100
+  ) |>
+  pivot_longer(-coin, names_to = "Variable", values_to = "pct") |>
+  pivot_wider(names_from = coin, values_from = pct) |>
+  arrange(desc(BITCOIN)) |>
+  kable(
+    digits = 1,
+    col.names = c("Variable", "Bitcoin (%)", "Ethereum (%)")
+  ) |>
+  kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE,
+    font_size = 16
+  ) |>
+  row_spec(0, bold = TRUE, color = "white", background = "#3182bd")
+
 ```
 
-The plot shows that missingness is concentrated in variables that rely on external data sources rather than market feeds. Sentiment Score has the highest proportion of missing values, close to 8.5 % for both Bitcoin and Ethereum. Search Interest and 7 Day Volatility follow with smaller gaps of about 1.6 and 1.9 %. Daily Return has roughly 0.5 % missingness, which corresponds to the initial day of each series when no previous price exists. The core market variables Coin, Date, Price, Volume, and Market Cap are fully observed across the entire year. Bitcoin and Ethereum display almost identical missingness patterns, which indicates that the gaps come from shared upstream sources rather than asset specific issues.
+The plot shows that missingness is concentrated in variables that rely on external data sources rather than market feeds. Sentiment Score has the highest proportion of missing values, close to 8.5 % for both Bitcoin and Ethereum. Search Interest and 7 Day Volatility follow with smaller gaps of about 1.6 and 1.9 %. Daily Return has roughly 0.3 % missingness, which corresponds to the initial day of each series when no previous price exists. The core market variables Coin, Date, Price, Volume, and Market Cap are fully observed across the entire year. Bitcoin and Ethereum display almost identical missingness patterns, which indicates that the gaps come from shared upstream sources rather than asset specific issues.
 
 ---
 
@@ -190,10 +218,12 @@ ggplot(df_long, aes(x = date, y = variable)) +
     title = "Missingness Over Time by Variable"
   ) +
   theme_grey(base_size = 16)
+
+
 ```
 
 
-Missingness occurs in well-defined locations rather than at random. Sentiment Score and Search Interest share identical missing dates late in the year for both coins, which points to temporary gaps in the external data sources rather than issues with the market data itself. Daily Return is missing only on the first available date, where it cannot be computed, and 7-Day Volatility is missing during the first six days of each series due to the rolling-window requirement.
+Missingness occurs in well defined locations rather than at random. Sentiment Score and Search Interest share identical missing dates late in the year for both coins, which points to temporary gaps in the external data sources rather than issues with the market data itself. Daily Return is missing only on the first available date, where it cannot be computed, and 7-Day Volatility is missing during the first six days of each series due to the rolling window requirement.
 
 
 ---
@@ -225,7 +255,7 @@ p1 / p2 +
 
 **Sentiment Score:** Price levels look similar on days with and without missing sentiment, with overlapping medians and interquartile ranges. This suggests that missingness in sentiment does not correspond to unusual market conditions. The gaps likely reflect coverage issues in the sentiment feed rather than price movements.
 
-**Search Interest:** Price distributions again overlap closely, indicating that missing search interest values are not linked to abnormal price behavior. Google Trends often omits low-volume days or returns incomplete windows, and the pattern here aligns with those expected limitations.
+**Search Interest:** Price distributions again overlap closely, indicating that missing search interest values are not linked to abnormal price behavior. Google Trends often omits low volume days or returns incomplete windows, and the pattern here aligns with those expected limitations.
 
 ### Imputation Strategy
 
