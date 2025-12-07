@@ -184,6 +184,10 @@ The plot shows that missingness is concentrated in variables that rely on extern
 Understanding how missingness evolves over time provides insight into whether gaps are random or structured. The analysis next focuses on the four variables with missing values to identify the timing and potential causes of these gaps.
 
 ```{r}
+#| label: fig-missing-time
+#| fig-cap: "Missingness occurs in well-defined clusters rather than randomly. Sentiment and search gaps appear late in the year, while daily return and volatility gaps occur at the start of each series as expected."
+
+
 vars_with_missing <- c(
   "sentiment_score",
   "search_interest",
@@ -233,6 +237,10 @@ Missingness occurs in well defined locations rather than at random. Sentiment Sc
 Since the gaps for sentiment score and search interest originate from upstream data limitations, the next step is to determine whether imputation is appropriate. Given that the dataset covers only one year for each asset, retaining as many observations as possible is valuable. However, imputation should only be applied if missingness is unrelated to unusual market conditions. For this reason, I examine whether missingness in the externally sourced variables aligns with abnormal price behavior before deciding how to proceed.
 
 ```{r}
+#| label: fig-missing-price
+#| fig-cap: "Price distributions overlap closely regardless of missingness status, suggesting gaps are unrelated to market conditions and safe to impute."
+
+
 p1 <- df |>
   mutate(sent_missing = if_else(is.na(sentiment_score), "Missing", "Present")) |>
   ggplot(aes(x = sent_missing, y = price)) +
@@ -297,7 +305,8 @@ Variables vary widely in scale, so outlier detection uses standardized Z-scores.
 #| fig-width: 16
 #| fig-height: 12
 #| fig-align: "center"
-
+#| label: fig-outliers
+#| fig-cap: "A few observations exceed ±3 standard deviations for volume, daily return, and volatility, but these align with periods of high market activity rather than data errors."
 
 df_z <- df |>
   mutate(across(
