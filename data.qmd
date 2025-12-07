@@ -77,6 +77,7 @@ suppressPackageStartupMessages({
   library(here)
   library(scales)
   library(zoo)
+  library(patchwork)
 })
 
 df <- read_csv(here("data", "clean", "merged_crypto_sentiment_trends.csv"), show_col_types = FALSE) |>
@@ -202,39 +203,24 @@ Missingness occurs in well-defined locations rather than at random. Sentiment Sc
 Since the gaps for sentiment score and search interest originate from upstream data limitations, the next step is to determine whether imputation is appropriate. Given that the dataset covers only one year for each asset, retaining as many observations as possible is valuable. However, imputation should only be applied if missingness is unrelated to unusual market conditions. For this reason, I examine whether missingness in the externally sourced variables aligns with abnormal price behavior before deciding how to proceed.
 
 ```{r}
-df |>
-  mutate(
-    sent_missing = if_else(is.na(sentiment_score), "Missing", "Present")
-  ) |>
+p1 <- df |>
+  mutate(sent_missing = if_else(is.na(sentiment_score), "Missing", "Present")) |>
   ggplot(aes(x = sent_missing, y = price)) +
   geom_boxplot(fill = "#3182bd", alpha = 0.45, color = "black", linewidth = 0.7) +
   facet_wrap(~ coin, ncol = 2, scales = "free_y") +
-  labs(
-    x = "Sentiment Score Status",
-    y = "Price",
-    title = "Price Levels on Days With and Without Missing Sentiment"
-  ) +
-  theme_grey(base_size = 16) +
-  theme(
-    plot.title = element_text(size = 12, face = "bold")
-  )
+  labs(x = "Sentiment Score Status", y = "Price") +
+  theme_grey(base_size = 14)
 
-df |>
-  mutate(
-    search_missing = if_else(is.na(search_interest), "Missing", "Present")
-  ) |>
+p2 <- df |>
+  mutate(search_missing = if_else(is.na(search_interest), "Missing", "Present")) |>
   ggplot(aes(x = search_missing, y = price)) +
   geom_boxplot(fill = "#3182bd", alpha = 0.45, color = "black", linewidth = 0.7) +
   facet_wrap(~ coin, ncol = 2, scales = "free_y") +
-  labs(
-    x = "Search Interest Status",
-    y = "Price",
-    title = "Price Levels on Days With and Without Missing Search Interest"
-  ) +
-  theme_grey(base_size = 16) +
-  theme(
-    plot.title = element_text(size = 12, face = "bold")
-  )
+  labs(x = "Search Interest Status", y = "Price") +
+  theme_grey(base_size = 14)
+
+p1 / p2 + 
+  plot_annotation(title = "Price Levels on Days With and Without Missing Values")
 ```
 
 **Sentiment Score:** Price levels look similar on days with and without missing sentiment, with overlapping medians and interquartile ranges. This suggests that missingness in sentiment does not correspond to unusual market conditions. The gaps likely reflect coverage issues in the sentiment feed rather than price movements.
